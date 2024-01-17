@@ -168,6 +168,13 @@ systemctl start openvpn@server
 systemctl status openvpn@server
 # Проверка, что OpenVPN слушает нужный порт
 ss -tulpn | grep openvpn    
+
+echo ""
+read -n 1 -s -r -p "Press any key to return to the main menu..."
+echo ""
+tput cup 0 0
+tput ed
+display_logo
 }
 
 add_new_client() {
@@ -176,10 +183,19 @@ add_new_client() {
 }
 
 list_clients() {
-    echo "Display a list of all..."
+	tput cup 0 0
+	tput ed
+	display_logo
+    echo "List of clients..."
     # Здесь ваш код для вывода списка всех клиентов
-    OPENVPN_DIR="~/easy-rsa/pki"
-	grep 'CN=' index.txt | awk -F '/CN=' '{print $2}'
+	echo ""
+	grep 'CN=' ~/easy-rsa/pki/index.txt | awk -F '/CN=' '{print NR ": " $2}'
+	echo ""
+    read -n 1 -s -r -p "Press any key to return to the main menu..."
+    echo ""
+	tput cup 0 0
+    tput ed
+    display_logo
 }
 
 delete_client() {
@@ -216,7 +232,7 @@ while true; do
     echo "Select options:"
     echo "1) Auto-installation and configuration"
     echo "2) Add a new client"
-    echo "3) Display a list of all"
+    echo "3) List of clients"
     echo "4) Delete a client"
     echo "5) Exit"
     read -p "Enter the option number: " option
