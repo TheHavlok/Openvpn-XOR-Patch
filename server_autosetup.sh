@@ -189,7 +189,24 @@ list_clients() {
     echo "List of clients..."
     # Здесь ваш код для вывода списка всех клиентов
 	echo ""
-	grep 'CN=' ~/easy-rsa/pki/index.txt | awk -F '/CN=' '{print NR ": " $2}'
+ # Получение списка клиентов
+    clients=()
+    while IFS= read -r line; do
+        if [[ $line == "V"* ]]; then
+            status="\e[42m\e[97m[Valid]\e[0m"
+        elif [[ $line == "R"* ]]; then
+            status="\e[41m\e[97m[Revoked]\e[0m"
+        else
+            continue
+        fi
+        cn=$(echo $line | awk -F '/CN=' '{print $2}')
+        clients+=("$cn $status")
+	done < ~/easy-rsa/pki/index.txt
+# Вывод списка клиентов с номерами
+echo "Список клиентов:"
+for i in "${!clients[@]}"; do
+    echo -e "$((i+1)): ${clients[i]}"
+done
 	echo ""
     read -n 1 -s -r -p "Press any key to return to the main menu..."
     echo ""
@@ -201,6 +218,49 @@ list_clients() {
 delete_client() {
     echo "Delete a client..."
     # Здесь ваш код для удаления клиента
+	OPENVPN_PATH="/etc/openvpn"
+	EASY_RSA_PATH=~/easy-rsa
+
+	# Получение списка клиентов
+	clients=()
+	while IFS= read -r line; do
+    	if [[ $line == "V"* ]]; then
+    	    status="\e[42m\e[97m[Valid]\e[0m"
+    	elif [[ $line == "R"* ]]; then
+    	    status="\e[41m\e[97m[Revoked]\e[0m"
+    	else
+        	continue
+    	fi
+    	cn=$(echo $line | awk -F '/CN=' '{print $2}')
+    	clients+=("$cn $status")
+	done < "$EASY_RSA_PATH/pki/index.txt"
+
+# Вывод списка клиентов с номерами
+echo "Список клиентов:"
+for i in "${!clients[@]}"; do
+    echo -e "$((i+1)): ${clients[i]}"
+done
+
+# Выбор клиента пользователем
+read -p "Введите номер клиента для удаления: " client_number
+
+# Получение имени клиента и проверка ввода
+selected_client="${clients[$((client_number-1))]% [*}"  # Удаляем статус из имени
+if [ -z "$selected_client" ]; then
+    echo "Неверный выбор."
+    exit 1
+fi
+
+cd "$EASY_RSA_PATH" || exit
+
+# Отзыв сертификата
+./easyrsa --batch revoke "$selected_client"
+./easyrsa gen-crl
+
+# Копирование CRL в директорию OpenVPN
+cp "$EASY_RSA_PATH/pki/crl.pem" "$OPENVPN_PATH"
+
+echo "Сертификат для клиента $selected_client отозван."	
 }
 
 display_logo() {
