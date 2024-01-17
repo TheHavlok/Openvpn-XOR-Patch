@@ -32,14 +32,14 @@ sysctl -p
 
 # Шаг 1.4: Получение исходного кода OpenVPN и XOR патча
 apt install wget tar unzip patch -y
-wget https://github.com/OpenVPN/openvpn/archive/v2.5_beta3.tar.gz
-tar -xvf v2.5_beta3.tar.gz
+wget https://github.com/TheHavlok/Openvpn-XOR-Patch/releases/download/files/openvpn-2.6.8.tar.gz
+tar -xvf openvpn-2.6.8.tar.gz
 
-wget https://github.com/Tunnelblick/Tunnelblick/archive/master.zip
-unzip master.zip
+wget https://github.com/TheHavlok/Openvpn-XOR-Patch/releases/download/files/Tunnelblick-master.zip
+unzip Tunnelblick-master.zip
 
 # Шаг 1.5: Применение патчей
-OPENVPN_DIR="openvpn-2.5_beta3"
+OPENVPN_DIR="openvpn-2.6.8"
 cp Tunnelblick-master/third_party/sources/openvpn/$OPENVPN_DIR/patches/*.diff $OPENVPN_DIR
 cd $OPENVPN_DIR
 
@@ -70,11 +70,6 @@ cd ~/easy-rsa
 ./easyrsa gen-req server nopass
 ./easyrsa sign-req server server
 
-# Создание и подписание ключа и сертификата клиента
-CLIENT_NAME="debian10"
-./easyrsa gen-req $CLIENT_NAME nopass
-./easyrsa sign-req client $CLIENT_NAME
-
 # Генерация параметров Diffie-Hellman
 ./easyrsa gen-dh
 
@@ -85,8 +80,6 @@ openvpn --genkey secret pki/tls-crypt.key
 cp pki/ca.crt /etc/openvpn
 cp pki/private/server.key /etc/openvpn/server
 cp pki/issued/server.crt /etc/openvpn/server
-cp pki/private/$CLIENT_NAME.key /etc/openvpn/client
-cp pki/issued/$CLIENT_NAME.crt /etc/openvpn/client
 cp pki/tls-crypt.key /etc/openvpn
 cp pki/dh.pem /etc/openvpn
 
@@ -96,9 +89,27 @@ echo "Код обфускации Scramble: $SCRAMBLE_CODE"
 
 # Шаг 1.10: Настройка сервера OpenVPN
 SERVER_CONF="/etc/openvpn/server.conf"
+
+# Инициализация файла конфигурации
 echo "port $PORT" > $SERVER_CONF
 echo 'proto udp' >> $SERVER_CONF
-# ... и так далее для каждой строки конфигурации
+echo 'dev tun' >> $SERVER_CONF
+echo "ca /etc/openvpn/ca.crt" >> $SERVER_CONF
+echo "cert /etc/openvpn/server/server.crt" >> $SERVER_CONF
+echo "key /etc/openvpn/server/server.key" >> $SERVER_CONF
+echo "dh /etc/openvpn/dh.pem" >> $SERVER_CONF
+echo "server 10.8.0.0 255.255.255.0" >> $SERVER_CONF
+echo "ifconfig-pool-persist /etc/openvpn/ipp.txt" >> $SERVER_CONF
+echo 'push "redirect-gateway def1 bypass-dhcp"' >> $SERVER_CONF
+echo 'push "dhcp-option DNS 8.8.8.8"' >> $SERVER_CONF
+echo 'push "dhcp-option DNS 8.8.4.4"' >> $SERVER_CONF
+echo "keepalive 10 120" >> $SERVER_CONF
+echo "cipher AES-128-GCM" >> $SERVER_CONF
+echo "tls-crypt /etc/openvpn/tls-crypt.key" >> $SERVER_CONF
+echo 'persist-key' >> $SERVER_CONF
+echo 'persist-tun' >> $SERVER_CONF
+echo "status openvpn-status.log" >> $SERVER_CONF
+echo "verb 3" >> $SERVER_CONF
 echo "scramble obfuscate $SCRAMBLE_CODE" >> $SERVER_CONF
 
 # Шаг 1.11: Настройка Systemd для OpenVPN
@@ -147,7 +158,3 @@ systemctl status openvpn@server
 # Проверка, что OpenVPN слушает нужный порт
 ss -tulpn | grep openvpn
 
-# Если все в порядке, выход из сервера
-exit
-
-# Теперь переход к настройке клиента
