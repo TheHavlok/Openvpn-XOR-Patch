@@ -1,5 +1,14 @@
 # OpenVPN Tunnelblick XOR Patch
 
+# Создание и подписание ключа и сертификата клиента
+CLIENT_NAME="debian10"
+./easyrsa gen-req $CLIENT_NAME nopass
+./easyrsa sign-req client $CLIENT_NAME
+
+# Копирование ключей и сертификатов в директорию OpenVPN
+cp pki/private/$CLIENT_NAME.key /etc/openvpn/client
+cp pki/issued/$CLIENT_NAME.crt /etc/openvpn/client
+
 ## 1. Set Up Server
 ### 1.1. Choose Port for OpenVPN
 On your server, choose a random port number between 10,000 and 50,000 for OpenVPN.
