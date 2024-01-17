@@ -1,7 +1,7 @@
 # OpenVPN Tunnelblick XOR Patch
 
-1. Set Up Server
-1.1. Choose Port for OpenVPN
+## 1. Set Up Server
+### 1.1. Choose Port for OpenVPN
 On your server, choose a random port number between 10,000 and 50,000 for OpenVPN.
 
 ```bash
@@ -9,7 +9,7 @@ awk -v min=10000 -v max=50000 'BEGIN{srand(); print int(min+rand()*(max-min+1))}
 ```
 The example result that we will use in the rest of this article: 16273
 
-1.2. Install and Configure Firewall
+### 1.2. Install and Configure Firewall
 There are multiple ways to implement a firewall: nftables, iptables, ufw, and firewalld. The modern way is nftables, and that is what we will use here. Issue each of these commands in turn to install and start nftables:
 
 ```bash
@@ -59,7 +59,7 @@ Save the rules:
 nft list ruleset > /etc/nftables.conf
 ```
 
-1.3. Allow Forwarding
+### 1.3. Allow Forwarding
 Enable IPv4 forwarding in the Linux kernel. Edit the system control configuration file:
 
 ```bash
@@ -78,7 +78,7 @@ Save the file. Apply the new settings by issuing the command:
 sysctl -p
 ```
 
-1.4. Get OpenVPN and XOR Patch Source
+### 1.4. Get OpenVPN and XOR Patch Source
 You must use matching versions of OpenVPN and the XOR patch.
 
 Open a browser and visit the GitHub releases page for OpenVPN. Determine the latest release number. At the time of writing, it is version v2.5_beta3. It may be a later version at the time you read this article. We will use v2.5_beta3 in our examples, though you may need to replace this.
@@ -98,11 +98,11 @@ apt install unzip -y
 unzip Tunnelblick-master.zip
 ```
 
-1.5. Apply Patches
+### 1.5. Apply Patches
 Copy the patch files into the OpenVPN directory, replacing openvpn-2.5_beta3 by the current version at the time you run this:
 
 ```bash
-cp Tunnelblick-master/third_party/sources/openvpn/openvpn-2.5_beta3/patches/*.diff openvpn-2.5_beta3
+cp Tunnelblick-master/third_party/sources/openvpn/openvpn-2.6.8/patches/*.diff openvpn-2.6.8
 ```
 
 Apply the patches to the OpenVPN source:
@@ -118,7 +118,7 @@ patch -p1 < 06-tunnelblick-openvpn_xorpatch-e.diff
 patch -p1 < 10-route-gateway-dhcp.diff
 ```
 
-1.6. Build OpenVPN with XOR Patch
+### 1.6. Build OpenVPN with XOR Patch
 Install the prerequisites for the build:
 
 ```bash
@@ -136,14 +136,14 @@ make install
 
 The program is installed to /usr/local/sbin/openvpn.
 
-1.7. Create Configuration Directories
+### 1.7. Create Configuration Directories
 Create directories that will store your OpenVPN key, certificate, and configuration files:
 
 ```bash
 mkdir -p /etc/openvpn/{server,client}
 ```
 
-1.8. Create Keys and Certificates with EasyRSA
+### 1.8. Create Keys and Certificates with EasyRSA
 Install the EasyRSA package:
 
 ```bash
@@ -220,7 +220,7 @@ cp pki/tls-crypt.key /etc/openvpn
 cp pki/dh.pem /etc/openvpn
 ```
 
-1.9. Generate Scramble Obfuscation Code
+### 1.9. Generate Scramble Obfuscation Code
 For the scrambling obfuscation, generate a 192-bit (24-byte) code, expressed as 32 base-64 characters:
 
 ```bash
@@ -233,7 +233,7 @@ The example result that we will use in the rest of this article:
 r7EaFR2DshpQT+QMfQGYO5BXC2BAV8JG
 ```
 
-1.10. Configure OpenVPN Server
+### 1.10. Configure OpenVPN Server
 Edit the OpenVPN configuration file:
 
 ```bash
@@ -270,7 +270,7 @@ scramble obfuscate r7EaFR2DshpQT+QMfQGYO5BXC2BAV8JG
 
 Save the file.
 
-1.11. Configure Systemd
+### 1.11. Configure Systemd
 Create a systemd service file for OpenVPN:
 
 ```bash
@@ -320,7 +320,7 @@ Create the directory for the process identification (pid) file:
 mkdir /run/openvpn
 ```
 
-1.12. Start OpenVPN
+### 1.12. Start OpenVPN
 Start OpenVPN on the server:
 
 ```bash
@@ -337,8 +337,8 @@ ss -tulpn | grep openvpn
 
 Server work is done:
 
-2. Set Up Client
-2.1. Download Keys and Certificates
+## 2. Set Up Client
+### 2.1. Download Keys and Certificates
 Now go to work on your PC. Assuming that your server has IP address yy.yy.yy.yy and that you named the client key and certificate debian10.*, copy the required files down from the server to the client like this:
 
 ```bash
@@ -348,7 +348,7 @@ scp root@yy.yy.yy.yy:/etc/openvpn/ca.crt ~/Downloads/ca.crt
 scp root@yy.yy.yy.yy:/etc/openvpn/tls-crypt.key ~/Downloads/tls-crypt.key
 ```
 
-2.2. Get OpenVPN and XOR Patch Source
+### 2.2. Get OpenVPN and XOR Patch Source
 For a Debian/Ubuntu client, this is the pretty much same process as on the server. The version number of OpenVPN and the XOR patch will be the same as on the server. We will use v2.5_beta3 in our examples, though you may need to replace this.
 
 Download the OpenVPN tarball for your version:
@@ -367,15 +367,17 @@ sudo apt install unzip -y
 unzip Tunnelblick-master.zip
 ```
 
-2.3. Apply Patches
+### 2.3. Apply Patches
 Copy the patch files into the OpenVPN directory, replacing openvpn-2.5_beta3 by the current version:
 
 ```bash
-cp Tunnelblick-master/third_party/sources/openvpn/openvpn-2.5_beta3/patches/*.diff openvpn-2.5_beta3
+cp Tunnelblick-master/third_party/sources/openvpn/openvpn-2.6.8/patches/*.diff openvpn-2.6.8
 ```
+
 Apply the patches to the OpenVPN source:
+
 ```bash
-cd openvpn-2.5_beta3
+cd openvpn-2.6.8
 sudo apt install patch -y
 patch -p1 < 02-tunnelblick-openvpn_xorpatch-a.diff
 patch -p1 < 03-tunnelblick-openvpn_xorpatch-b.diff
@@ -384,55 +386,71 @@ patch -p1 < 05-tunnelblick-openvpn_xorpatch-d.diff
 patch -p1 < 06-tunnelblick-openvpn_xorpatch-e.diff
 patch -p1 < 10-route-gateway-dhcp.diff
 ```
-2.4. Build OpenVPN with XOR Patch
+
+### 2.4. Build OpenVPN with XOR Patch
 Install the prerequisites for the build:
+
 ```bash
-sudo apt install build-essential libssl-dev iproute2 liblz4-dev liblzo2-dev libpam0g-dev libpkcs11-helper1-dev libsystemd-dev resolvconf pkg-config autoconf automake libtool -y
+apt install build-essential libssl-dev iproute2 liblz4-dev liblzo2-dev libpam0g-dev libpkcs11-helper1-dev libsystemd-dev resolvconf pkg-config autoconf automake libtool libcap-ng-dev liblz4-dev libsystemd-dev liblzo2-dev libpam0g libpam0g-dev -y
 ```
+
 Compile and install OpenVPN with the XOR patch:
+
 ```bash
 autoreconf -i -v -f
 ./configure --enable-systemd --enable-async-push --enable-iproute2
 make
 sudo make install
 ```
+
 The program is installed to /usr/local/sbin/openvpn.
 
-2.5. Fix DNS Resolution
+### 2.5. Fix DNS Resolution
 There is a problem with the pushed DNS servers being ignored in OpenVPN on Linux. The solution depends on what is managing the nameservers. Here is a solution that worked on a Debian 10 client with NetworkManager. There is an alternative solution for Ubuntu with Systemd.
 
 Edit the NetworkManager configuration:
+
 ```bash
 sudo nano /etc/NetworkManager/NetworkManager.conf
 ```
+
 In the [main] section, insert a line:
+
 ```bash
 dns=none
 ```
+
 Save the file. Then edit the /etc/resolv.conf file:
 
 ```bash
 sudo nano /etc/resolv.conf
 ```
+
 Change the contents of the file to specify nameservers that will be accessible while the VPN is on, e.g.:
+
 ```bash
 nameserver 8.8.8.8
 nameserver 8.8.4.4
 ```
+
 Save the file. Restart NetworkManager:
 
 sudo systemctl restart NetworkManager
-2.6. Create OpenVPN Client Configuration File
+
+### 2.6. Create OpenVPN Client Configuration File
 Create a client configuration file for OpenVPN:
+
 ```bash
 cd ~/Downloads
 nano debian10.conf
 ```
+
 Insert the configuration details below, tailoring them to your situation:
 
 Replace yy.yy.yy.yy by the public IP address of your server
 Replace 16273 by your random port
 Replace r7EaFR2DshpQT+QMfQGYO5BXC2BAV8JG by your random obfuscation code
+
 ```bash
 client
 dev tun
@@ -451,17 +469,20 @@ tls-crypt tls-crypt.key
 verb 3
 scramble obfuscate r7EaFR2DshpQT+QMfQGYO5BXC2BAV8JG
 ```
+
 Save the file.
 
-2.7. Start OpenVPN Client
+### 2.7. Start OpenVPN Client
 Open a terminal on your client PC, and start OpenVPN running:
+
 ```bash
 cd ~/Downloads
 sudo /usr/local/sbin/openvpn --config debian10.conf
 ```
+
 Leave the terminal open with OpenVPN running in it.
 
-2.8. Test End-to-End
+### 2.8. Test End-to-End
 Open Firefox.
 
 Visit IP Chicken.
