@@ -1,11 +1,22 @@
 #!/bin/bash
 
+# Функции для каждого пункта меню
+auto_install() {
+echo ""
+echo "Auto-installation and configuration..."
+echo ""
+# Шаг 1.2: Установка и настройка брандмауэра nftables
+read -p "Do you want to update the system? (Y/N): " -n 1 -r
+echo    # Для новой строки
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+	DEBIAN_FRONTEND=noninteractive apt-get update -y
+	DEBIAN_FRONTEND=noninteractive apt-get upgrade -yq --with-new-pkgs --allow-change-held-packages
+fi
+
 # Шаг 1.1: Выбор случайного порта для OpenVPN
 PORT=$(awk -v min=10000 -v max=50000 'BEGIN{srand(); print int(min+rand()*(max-min+1))}')
 echo "Используемый порт OpenVPN: $PORT"
 
-# Шаг 1.2: Установка и настройка брандмауэра nftables
-apt update -y && apt upgrade -y
 apt install nftables -y
 systemctl enable nftables
 systemctl start nftables
@@ -156,5 +167,65 @@ systemctl start openvpn@server
 # Проверка статуса службы OpenVPN
 systemctl status openvpn@server
 # Проверка, что OpenVPN слушает нужный порт
-ss -tulpn | grep openvpn
+ss -tulpn | grep openvpn    
+}
 
+add_new_client() {
+    echo "Add a new client..."
+    # Здесь ваш код для добавления нового клиента
+}
+
+list_clients() {
+    echo "Display a list of all..."
+    # Здесь ваш код для вывода списка всех клиентов
+    OPENVPN_DIR="~/easy-rsa/pki"
+	grep 'CN=' index.txt | awk -F '/CN=' '{print $2}'
+}
+
+delete_client() {
+    echo "Delete a client..."
+    # Здесь ваш код для удаления клиента
+}
+
+display_logo() {
+	echo " _   _       _            _  _____                    "
+    echo "| | | |     | |          | ||_   _|                   "
+    echo "| | | |_ __ | |_   _  ___| | _| | ___  __ _ _ __ ___  "
+    echo "| | | | '_ \| | | | |/ __| |/ / |/ _ \/ _\` | '_ \` _ \ "
+    echo "| |_| | | | | | |_| | (__|   <| |  __/ (_| | | | | | |"
+    echo " \___/|_| |_|_|\__,_|\___|_|\_\_/\___|\__,_|_| |_| |_|"
+    echo "                                                      "
+    echo "                                                      "
+}
+
+# Проверка на наличие прав суперпользователя
+if [[ $EUID -ne 0 ]]; then
+	echo -e "\e[42m\e[97mRequesting elevation of privileges...\e[0m"
+    # Перезапуск скрипта с sudo
+    sudo bash "$0" "$@"
+    exit $?
+fi
+
+tput cup 0 0
+tput ed
+
+display_logo
+
+# Основной цикл меню
+while true; do
+    echo "Select options:"
+    echo "1) Auto-installation and configuration"
+    echo "2) Add a new client"
+    echo "3) Display a list of all"
+    echo "4) Delete a client"
+    echo "5) Exit"
+    read -p "Enter the option number: " option
+    case $option in
+        1) auto_install ;;
+        2) add_new_client ;;
+        3) list_clients ;;
+        4) delete_client ;;
+        5) break ;;
+        *) tput cup 0 0; tput ed; display_logo; echo -e "\033[31mIncorrect selection. Please try again.\033[0m\n";;	
+    esac
+done
