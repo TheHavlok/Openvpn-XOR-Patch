@@ -5,7 +5,7 @@ PORT=$(awk -v min=10000 -v max=50000 'BEGIN{srand(); print int(min+rand()*(max-m
 echo "Используемый порт OpenVPN: $PORT"
 
 # Шаг 1.2: Установка и настройка брандмауэра nftables
-apt update && apt upgrade -y
+apt update -y && apt upgrade -y
 apt install nftables -y
 systemctl enable nftables
 systemctl start nftables
