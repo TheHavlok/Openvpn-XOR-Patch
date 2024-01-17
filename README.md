@@ -97,9 +97,15 @@ patch -p1 < 10-route-gateway-dhcp.diff
 ```
 1.6. Build OpenVPN with XOR Patch
 Install the prerequisites for the build:
-## добавить ещё пакеты которых не достает
+
 ```bash
 apt install build-essential libssl-dev iproute2 liblz4-dev liblzo2-dev libpam0g-dev libpkcs11-helper1-dev libsystemd-dev resolvconf pkg-config autoconf automake libtool -y
+
+apt-get install libcap-ng-dev
+apt-get install liblz4-dev
+apt-get install libsystemd-dev
+apt-get install liblzo2-dev
+apt install libpam0g libpam0g-dev
 ```
 Compile and install OpenVPN with the XOR patch:
 ```bash
